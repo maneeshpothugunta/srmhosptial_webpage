@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctor Listing Page</title>
+  <link rel="stylesheet" href="mok1.css" />
+</head>
+<body>
+
+  <!-- Navigation Menu -->
+  <nav class="navbar">
+    <div class="logo">SRM HealthCare</div>
+    <ul class="nav-links">
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Doctors</a></li>
+      <li><a href="#">Facilities</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- Image Slider -->
+  
+
+  <!-- Search Header -->
+  <header>
+    <h1>Find Your Specialist</h1>
+    <input type="text" id="autocomplete-input" placeholder="Search for doctor..." data-testid="autocomplete-input" />
+    <div id="suggestions-container"></div>
+  </header>
+
+  <!-- Filters + Doctor List + Hospital Info -->
+  <div class="container">
+
+    <aside id="filters">
+      <h3 data-testid="filter-header-moc">Consultation Mode</h3>
+      <input type="radio" id="video-consult" name="consultation" value="video" />
+      <label for="video-consult">Video Consult</label><br />
+      <input type="radio" id="in-clinic" name="consultation" value="in-clinic" />
+      <label for="in-clinic">In Clinic</label>
+
+      <h3 data-testid="filter-header-speciality">Specialties</h3>
+      <div id="specialties-container">
+        <input type="checkbox" id="cardiology" value="Cardiology" />
+        <label for="cardiology">Cardiology</label><br />
+        <input type="checkbox" id="neurology" value="Neurology" />
+        <label for="neurology">Neurology</label><br />
+        <input type="checkbox" id="dermatology" value="Dermatology" />
+        <label for="dermatology">Dermatology</label><br />
+        <input type="checkbox" id="orthopedics" value="Orthopedics" />
+        <label for="orthopedics">Orthopedics</label><br />
+      </div>
+
+      <h3 data-testid="filter-header-sort">Sort</h3>
+      <input type="radio" id="sort-fees" name="sort" value="fees" />
+      <label for="sort-fees">Sort by Fees</label><br />
+      <input type="radio" id="sort-experience" name="sort" value="experience" />
+      <label for="sort-experience">Sort by Experience</label>
+    </aside>
+
+    <main id="doctor-list">
+      <!-- Doctor cards get added here dynamically -->
+    </main>
+
+    <section id="hospital-info">
+      <h2>About Our Hospital</h2>
+      <p><strong>Location:</strong> Kattankulathur, Chennai</p>
+      <p><strong>Contact:</strong> +91 98765 43210</p>
+      <ul>
+        <li>24/7 Emergency Services</li>
+        <li>Online Appointment Booking</li>
+        <li>Advanced Equipment</li>
+        <li>Pharmacy & Diagnostics</li>
+      </ul>
+    </section>
+  </div>
+
+  <script src="script.js">const apiUrl = "https://srijandubey.github.io/campus-api-mock/SRM-C1-25.json";
+    let doctorData = [];
+    let filteredDoctors = [];
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch doctor data from the API
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                doctorData = data.doctors;
+                filteredDoctors = [...doctorData];
+                const specialties = data.specialties;
+                populateSpecialtiesFilter(specialties); // Populate specialties filter
+                updateDoctorList(filteredDoctors); // Display all doctors initially
+            });
+    
+        // Event listeners for filters
+        document.querySelectorAll('input[name="consultation"]').forEach(input => {
+            input.addEventListener('change', applyFilters);
+        });
+        document.querySelectorAll('input[name="sort"]').forEach(input => {
+            input.addEventListener('change', applyFilters);
+        });
+        document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', applyFilters);
+        });
+        document.getElementById('autocomplete-input').addEventListener('input', onSearchInput);
+    });
+    
+    // Populate specialties filter with checkboxes
+    function populateSpecialtiesFilter(specialties) {
+        const filterContainer = document.getElementById('specialties-container');
+        specialties.forEach(specialty => {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = filter-specialty-${specialty};
+            checkbox.value = specialty;
+            checkbox.setAttribute('data-testid', filter-specialty-${specialty});
+            const label = document.createElement('label');
+            label.setAttribute('for', filter-specialty-${specialty});
+            label.textContent = specialty;
+    
+            filterContainer.appendChild(checkbox);
+            filterContainer.appendChild(label);
+            filterContainer.appendChild(document.createElement('br'));
+        });
+    }
+    
+    // Handle the search input event
+    function onSearchInput(event) {
+        const query = event.target.value.toLowerCase();
+        const suggestions = doctorData.filter(doctor =>
+            doctor.name.toLowerCase().includes(query)
+        ).slice(0, 3);
+        showSuggestions(suggestions);
+    }
+    
+    // Show search suggestions
+    function showSuggestions(suggestions) {
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        suggestionsContainer.innerHTML = '';
+        suggestions.forEach(suggestion => {
+            const div = document.createElement('div');
+            div.textContent = suggestion.name;
+            div.setAttribute('data-testid', 'suggestion-item');
+            div.addEventListener('click', () => {
+                document.getElementById('autocomplete-input').value = suggestion.name;
+                applyFilters();
+            });
+            suggestionsContainer.appendChild(div);
+        });
+    }
+    
+    // Apply filters based on selected options
+    function applyFilters() {
+        const consultationMode = document.querySelector('input[name="consultation"]:checked')?.value;
+        const specialties = [...document.querySelectorAll('input[type="checkbox"]:checked')]
+            .map(checkbox => checkbox.value);
+        const sortOption = document.querySelector('input[name="sort"]:checked')?.value;
+    
+        // Filter doctors based on selected filters
+        filteredDoctors = doctorData.filter(doctor => {
+            let matchesConsultation = true;
+            let matchesSpecialties = true;
+    
+            if (consultationMode) {
+                matchesConsultation = doctor.consultationMode === consultationMode;
+            }
+    
+            if (specialties.length > 0) {
+                matchesSpecialties = specialties.every(specialty => doctor.specialties.includes(specialty));
+            }
+    
+            return matchesConsultation && matchesSpecialties;
+        });
+    
+        // Sort doctors based on selected option
+        if (sortOption === 'fees') {
+            filteredDoctors.sort((a, b) => a.fee - b.fee);
+        } else if (sortOption === 'experience') {
+            filteredDoctors.sort((a, b) => b.experience - a.experience);
+        }
+    
+        // Update the doctor list after filtering
+        updateDoctorList(filteredDoctors);
+    }
+    
+    // Update the doctor list
+    function updateDoctorList(doctors) {
+        const doctorListContainer = document.getElementById('doctor-list');
+        doctorListContainer.innerHTML = '';
+    
+        doctors.forEach(doctor => {
+            const doctorCard = document.createElement('div');
+            doctorCard.classList.add('doctor-card');
+            doctorCard.setAttribute('data-testid', 'doctor-card');
+            doctorCard.innerHTML = `
+                <h4 data-testid="doctor-name">${doctor.name}</h4>
+                <p data-testid="doctor-specialty">${doctor.specialties.join(', ')}</p>
+                <p data-testid="doctor-experience">Experience: ${doctor.experience} years</p>
+                <p data-testid="doctor-fee">Fee: ₹${doctor.fee}</p>
+            `;
+            doctorListContainer.appendChild(doctorCard);
+        });
+    }</script>
+</body>
+</html>
